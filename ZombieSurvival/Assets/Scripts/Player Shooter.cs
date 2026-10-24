@@ -15,6 +15,8 @@ public class PlayerShooter : MonoBehaviour
     {
         PlayerAnimator = GetComponent<Animator>();
         playerInput = GetComponent<PlayerInput>();
+
+        gun.gunAnimator = PlayerAnimator;
     }
 
     private void Update()

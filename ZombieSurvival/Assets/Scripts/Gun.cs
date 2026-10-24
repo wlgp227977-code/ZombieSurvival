@@ -19,6 +19,7 @@ public class Gun : MonoBehaviour
 
     private LineRenderer bulletLineRenderer;
     private AudioSource gunAudioPlayer;
+    public Animator gunAnimator;    
 
     public GunData gunData;
     private float fireDistance = 50f;
@@ -32,7 +33,7 @@ public class Gun : MonoBehaviour
     {
         bulletLineRenderer = GetComponent<LineRenderer>();
         gunAudioPlayer = GetComponent<AudioSource>();
-        
+                
 
         bulletLineRenderer.positionCount = 2;
         bulletLineRenderer.enabled = false;
@@ -56,7 +57,9 @@ public class Gun : MonoBehaviour
             Shoot();
         }
     }
+
     public LayerMask targetLayer;
+
     private void Shoot()
     {
         Vector3 hitPosition;
@@ -65,8 +68,8 @@ public class Gun : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hit, fireDistance, targetLayer))
         {
             hitPosition = hit.point;
-
             IDamageable target = hit.collider.GetComponent<IDamageable>();
+
             if (target != null)
             {
                 target.OnDamage(gunData.damage, hit.point, hit.normal);
@@ -102,19 +105,33 @@ public class Gun : MonoBehaviour
         bulletLineRenderer.enabled = false;
     }    
 
-    public bool Reload()
+    
+public bool Reload()
+{
+    if (CurrentState == State.Reloading || ammoRemain <= 0 ||
+        magAmmo >= gunData.magCapacity)
     {
-        if (CurrentState == State.Reloading && ammoRemain <= 0 &&
-            magAmmo == 25)
-        {
-            return false;
-        }
-        int leftAmmo = Mathf.Min(25 - magAmmo, ammoRemain);
-        ammoRemain -= leftAmmo;
-        magAmmo += leftAmmo;
-        CurrentState = State.Ready;
-        uiManager.SetAmmoText(magAmmo, ammoRemain);
-        return true;        
+        return false;
     }
+    CurrentState = State.Reloading;
+    StartCoroutine(ReloadCoroutine());
+    return true;
+}
+
+private IEnumerator ReloadCoroutine()
+{
+    gunAudioPlayer.PlayOneShot(gunData.reloadClip);
+    gunAnimator.SetTrigger("Reload");
+
+    yield return new WaitForSeconds(gunData.reloadTime);
+
+    int leftAmmo = Mathf.Min(gunData.magCapacity - magAmmo,ammoRemain);
+    ammoRemain -= leftAmmo;
+    magAmmo += leftAmmo;
+
+    uiManager.SetAmmoText(magAmmo, ammoRemain);
+    CurrentState = State.Ready;
+}
+
 
 }
