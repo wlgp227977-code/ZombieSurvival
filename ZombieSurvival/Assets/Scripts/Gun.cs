@@ -80,7 +80,7 @@ public class Gun : MonoBehaviour
             hitPosition = fireTransform.position + fireTransform.forward * fireDistance;
         }       
         
-        StartCoroutine(ShotEffect(hitPosition));
+        StartCoroutine(CoShotEffect(hitPosition));
 
         magAmmo--;
         uiManager.SetAmmoText(magAmmo, ammoRemain);
@@ -91,7 +91,7 @@ public class Gun : MonoBehaviour
         }
     }
     
-    private IEnumerator ShotEffect(Vector3 hitPosition)
+    private IEnumerator CoShotEffect(Vector3 hitPosition)
     {
         muzzleFlashEffect.Play();
         shellEjectEffect.Play();
@@ -106,32 +106,31 @@ public class Gun : MonoBehaviour
     }    
 
     
-public bool Reload()
-{
-    if (CurrentState == State.Reloading || ammoRemain <= 0 ||
-        magAmmo >= gunData.magCapacity)
+    public bool Reload()
     {
-        return false;
+        if (CurrentState == State.Reloading || ammoRemain <= 0 ||
+            magAmmo >= gunData.magCapacity)
+        {
+            return false;
+        }        
+        StartCoroutine(CoReload());
+        return true;
     }
-    CurrentState = State.Reloading;
-    StartCoroutine(ReloadCoroutine());
-    return true;
-}
 
-private IEnumerator ReloadCoroutine()
-{
-    gunAudioPlayer.PlayOneShot(gunData.reloadClip);
-    gunAnimator.SetTrigger("Reload");
+    private IEnumerator CoReload()
+    {
+        CurrentState = State.Reloading;
+        gunAudioPlayer.PlayOneShot(gunData.reloadClip);
+        
+        yield return new WaitForSeconds(gunData.reloadTime);
+        
+        int leftAmmo = Mathf.Min(gunData.magCapacity - magAmmo,ammoRemain);
+        ammoRemain -= leftAmmo;
+        magAmmo += leftAmmo;
 
-    yield return new WaitForSeconds(gunData.reloadTime);
-
-    int leftAmmo = Mathf.Min(gunData.magCapacity - magAmmo,ammoRemain);
-    ammoRemain -= leftAmmo;
-    magAmmo += leftAmmo;
-
-    uiManager.SetAmmoText(magAmmo, ammoRemain);
-    CurrentState = State.Ready;
-}
+        uiManager.SetAmmoText(magAmmo, ammoRemain);    
+        CurrentState = State.Ready;    
+    }
 
 
 }
