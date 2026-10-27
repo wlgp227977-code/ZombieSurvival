@@ -132,5 +132,9 @@ public class Gun : MonoBehaviour
         CurrentState = State.Ready;    
     }
 
-
+    public void RestoreAmmo(int amount)
+    {        
+        ammoRemain = Mathf.Min(ammoRemain + amount, gunData.startAmmoRemain);
+        uiManager.SetAmmoText(magAmmo, ammoRemain);
+    }
 }

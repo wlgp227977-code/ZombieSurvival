@@ -55,4 +55,10 @@ public class PlayerHealth : LivingEntity
         playerInput.enabled = false;
         uiHealth.gameObject.SetActive(false);
     }
+
+     public override void RestoreHealth(float amount)
+    {
+        base.RestoreHealth(amount);
+        uiHealth.fillAmount = Health / startingHealth; 
+    }
 }

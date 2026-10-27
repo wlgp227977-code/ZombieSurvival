@@ -35,4 +35,13 @@ public class LivingEntity : MonoBehaviour, IDamageable
         IsDead = true;
         OnDead.Invoke();
     }
+    public virtual void RestoreHealth(float amount)
+    {
+        if (IsDead)
+        {
+            return;
+        }
+
+        Health = Mathf.Clamp(Health + amount, 0, startingHealth);
+    }
 }

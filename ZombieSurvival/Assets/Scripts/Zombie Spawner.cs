@@ -9,7 +9,8 @@ using UnityEngine.UIElements.Experimental;
 
 public class ZombieSpawner : MonoBehaviour
 {
-    public UIManager uiManager;
+    private GameManager gameManager;
+    private UIManager uiManager;
     public Zombie zombiePrefab;
     public ZombieData[] zombieDatas;
     public Transform[] spawnPoints;
@@ -26,11 +27,17 @@ public class ZombieSpawner : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        GameObject findGo = GameObject.FindWithTag("GameController");
+        gameManager = findGo.GetComponent<GameManager>();
+        uiManager = gameManager.uIManager;
+    }
     private void SpawnWave()
     {
         wave++;
 
-        int count = Mathf.RoundToInt(wave * 1.5f);     
+        int count = Mathf.RoundToInt(wave * 1.5f);
         for (int i = 0; i < count; ++i)
         {
             CreateZombie();
@@ -49,6 +56,11 @@ public class ZombieSpawner : MonoBehaviour
             zombie = Instantiate(zombiePrefab, point.position, point.rotation);
             zombie.gameObject.SetActive(false);
             zombiePool.Add(zombie);
+
+            zombie.OnDead.AddListener(() => zombies.Remove(zombie));
+            zombie.OnDead.AddListener(() => StartCoroutine(CoReturnToPoolZombie(zombie)));
+            zombie.OnDead.AddListener(() => uiManager.SetWaveText(wave, zombies.Count));
+            zombie.OnDead.AddListener(() => gameManager.AddScore(50));
         }
 
         zombie = zombiePool[0];
@@ -57,11 +69,7 @@ public class ZombieSpawner : MonoBehaviour
         zombie.transform.rotation = point.rotation;
         zombie.gameObject.SetActive(true);
         zombies.Add(zombie);
-        zombiePool.Remove(zombie);              // 최초 한번만 생성하고 그 이후에는 재활용
-
-        zombie.OnDead.AddListener(() => zombies.Remove(zombie)); 
-        zombie.OnDead.AddListener(() => StartCoroutine(CoReturnToPoolZombie(zombie)));        
-        zombie.OnDead.AddListener(() => uiManager.SetWaveText(wave, zombies.Count)); 
+        zombiePool.Remove(zombie);              // 최초 한번만 생성하고 그 이후에는 재활용       
 
     }
     private IEnumerator CoReturnToPoolZombie(Zombie zombie)
@@ -69,5 +77,13 @@ public class ZombieSpawner : MonoBehaviour
         yield return new WaitForSeconds(5f);
         zombie.gameObject.SetActive(false);
         zombiePool.Add(zombie);
+    }
+
+    public void OnEndGame()
+    {
+        for (int i = zombies.Count - 1; i >= 0; --i)
+        {
+            zombies[i].Die();
+        }
     }
 }
